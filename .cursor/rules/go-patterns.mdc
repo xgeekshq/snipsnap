@@ -1,0 +1,42 @@
+---
+description: Go coding patterns for snipsnap
+globs: "**/*.go"
+alwaysApply: false
+---
+
+# Go Patterns
+
+## License
+
+MIT license. No per-file license headers. Do not add Apache boilerplate.
+
+## Controller-Runtime Idioms
+
+- Use `client.IgnoreNotFound(err)` when a missing resource is not an error
+- Use `controllerutil.SetControllerReference` for owner references
+- Use `client.MergeFrom(obj.DeepCopy())` for conflict-safe patches instead of full Updates
+- Re-fetch objects before status updates to avoid conflicts
+- Defer status updates: compare before/after with `reflect.DeepEqual`
+
+## Logging
+
+Follow Kubernetes structured logging conventions:
+- Capital first letter: `"Creating inference pod"`
+- No trailing period
+- Past tense for errors: `"Failed to create Pod"`
+- Use key-value pairs: `log.Info("Created PVC", "name", pvcName)`
+
+## Engine Builders
+
+New engines go in `internal/engine/`. Follow the existing pattern:
+- Add a `<engine>PodForModel()` function (unexported)
+- Register it in the switch in `engine.go:PodForModel()`
+- Container must be named `server`, port 8000
+- Apply `labelsForPod()` and `annotationsForPod()`
+- Call `patchCacheVolume()` if caching is supported
+
+## Testing
+
+- Unit tests: standard `testing` package, file named `*_test.go` next to source
+- Integration tests: Ginkgo/Gomega with envtest in `internal/controller/`
+- Use `client.MergeFrom` patches in tests to avoid conflicts with running controllers

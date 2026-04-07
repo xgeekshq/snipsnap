@@ -1,0 +1,42 @@
+---
+description: snipsnap architecture constraints and design decisions
+alwaysApply: true
+---
+
+# snipsnap Architecture
+
+## Single-GPU, Zero-Concurrency
+
+Only one model is loaded at a time. The Workspace CR is the singleton that controls the GPU. There is no autoscaling, no load balancing, no multi-replica support.
+
+## CRD Roles
+
+- **Model** is declarative config (what *can* run). It owns PVCs for caching.
+- **Workspace** is the state machine (what *is* running). It owns inference Pods. Phases: Idle, Switching, Loading, Ready.
+
+## Model Switch Flow
+
+1. Proxy receives OpenAI request, extracts model name from JSON body
+2. If Workspace.status.loadedModel != requested model, proxy patches Workspace.spec.activeModel
+3. Workspace controller deletes old pod (zero grace period), creates new pod
+4. Proxy polls Workspace.status.phase until Ready, then reverse-proxies to Workspace.status.inferenceAddress
+
+Cold starts are acceptable. The proxy blocks the HTTP request during the switch.
+
+## Engine Pod Contract
+
+All engine pod builders (`internal/engine/`) must produce pods with:
+- Container named `server` listening on port 8000
+- Labels from `api/v1/labels.go`: `xgeeks.com/model`, `xgeeks.com/workspace`, `xgeeks.com/engine`
+- Annotation `xgeeks.com/port: "8000"`
+- `RestartPolicy: Never`
+
+## Controller Ownership
+
+- Model controller owns PVCs (cache volumes)
+- Workspace controller owns Pods (inference workloads)
+- Use `controllerutil.SetControllerReference` for garbage collection
+
+## API Group
+
+`snipsnap.xgeeks.com/v1`. Labels use the `xgeeks.com` prefix.

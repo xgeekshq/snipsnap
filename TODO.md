@@ -6,11 +6,11 @@ Known gaps and missing features identified during initial development.
 
 - [x] **change licencse stuff**
 
-- [ ] **local dev lifecycle**
+- [ ] **local dev lifecycle** helm? how to build the controller image?
 
 - [ ] **vLLM model download**: Ollama self-downloads via `ollama pull` in the startup probe, but vLLM pods have no mechanism to populate the cache PVC. Needs an init container or cache Job to run `huggingface-cli download` before the inference server starts.
 
-- [ ] **Request queue / concurrency control**: No serialization of requests in the proxy. Concurrent requests for different models race on the Workspace `activeModel` patch. Needs a queue or mutex in `internal/proxy/handler.go` to serialize model switches and drain in-flight requests before swapping.
+- [ ] **Request queue / concurrency control**: No serialization of requests in the proxy. Concurrent requests for different models race on the Workspace `activeModel` patch. Needs a queue or mutex in `internal/proxy/handler.go` to serialize model switches and drain in-flight requests before swapping. Lets build a statefull queue with sqlite, sotre it a pvc. Should have an in memory queue that persists to sqlite.
 
 - [ ] **Workspace-level resource defaults**: GPU/scheduling constraints are repeated inline on every Model CR (`spec.resources`). The Workspace should define default resource requirements, nodeSelector, tolerations, and affinity that all Models inherit unless overridden.
 
