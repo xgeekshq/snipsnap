@@ -4,6 +4,10 @@ Known gaps and missing features identified during initial development.
 
 ## High Priority
 
+- [x] **change licencse stuff**
+
+- [ ] **local dev lifecycle**
+
 - [ ] **vLLM model download**: Ollama self-downloads via `ollama pull` in the startup probe, but vLLM pods have no mechanism to populate the cache PVC. Needs an init container or cache Job to run `huggingface-cli download` before the inference server starts.
 
 - [ ] **Request queue / concurrency control**: No serialization of requests in the proxy. Concurrent requests for different models race on the Workspace `activeModel` patch. Needs a queue or mutex in `internal/proxy/handler.go` to serialize model switches and drain in-flight requests before swapping.
@@ -17,6 +21,8 @@ Known gaps and missing features identified during initial development.
 - [ ] **In-cluster proxy routing**: The proxy writes raw pod IPs into `Workspace.status.inferenceAddress`, which only works when the operator runs inside the cluster. Running locally via `go run` cannot reach pod IPs. Options: create a Service per inference pod, or add a dev-mode address override flag.
 
 - [ ] **Kustomize manager.yaml out of sync**: The scaffolded `config/manager/manager.yaml` passes `--leader-elect` which was removed from `cmd/main.go`. Needs updating with snipsnap-specific args (`--namespace`, `--workspace-name`, `--api-bind-address`, port exposure).
+
+- [ ] **Agent files setup**
 
 ## Housekeeping
 
