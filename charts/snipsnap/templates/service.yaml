@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: snipsnap-api
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: snipsnap
+    app.kubernetes.io/component: controller
+spec:
+  type: ClusterIP
+  ports:
+    - name: api
+      port: {{ .Values.api.port }}
+      targetPort: api
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: snipsnap
+    app.kubernetes.io/component: controller

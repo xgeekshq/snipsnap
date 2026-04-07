@@ -1,0 +1,6 @@
+apiVersion: snipsnap.xgeeks.com/v1
+kind: Workspace
+metadata:
+  name: default
+spec:
+  activeModel: ""

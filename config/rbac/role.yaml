@@ -1,0 +1,48 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - pods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - snipsnap.xgeeks.com
+  resources:
+  - models
+  - workspaces
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - snipsnap.xgeeks.com
+  resources:
+  - models/finalizers
+  - workspaces/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - snipsnap.xgeeks.com
+  resources:
+  - models/status
+  - workspaces/status
+  verbs:
+  - get
+  - patch
+  - update

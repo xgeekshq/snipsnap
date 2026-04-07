@@ -1,0 +1,6 @@
+apiVersion: v2
+name: snipsnap
+description: Aggressive LLM switching operator for resource-starved K8s clusters
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

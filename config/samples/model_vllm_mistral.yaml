@@ -1,0 +1,17 @@
+apiVersion: snipsnap.xgeeks.com/v1
+kind: Model
+metadata:
+  name: mistral-7b
+spec:
+  url: "mistralai/Mistral-7B-Instruct-v0.3"
+  engine: VLLM
+  cache:
+    enabled: true
+    storageSize: "30Gi"
+  resources:
+    limits:
+      nvidia.com/gpu: "1"
+      memory: "24Gi"
+  args:
+    - "--max-model-len=8192"
+    - "--dtype=half"
