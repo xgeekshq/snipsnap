@@ -1,7 +1,8 @@
+{{- if .Values.metrics.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: snipsnap-api
+  name: snipsnap-controller-metrics-service
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: snipsnap
@@ -9,10 +10,11 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - name: api
-      port: {{ .Values.api.port }}
-      targetPort: api
+    - name: https
+      port: 8443
+      targetPort: 8443
       protocol: TCP
   selector:
     app.kubernetes.io/name: snipsnap
     app.kubernetes.io/component: controller
+{{- end }}

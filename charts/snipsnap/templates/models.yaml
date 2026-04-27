@@ -1,0 +1,30 @@
+{{- range .Values.models }}
+---
+apiVersion: snipsnap.xgeeks.com/v1
+kind: Model
+metadata:
+  name: {{ .name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  url: {{ .url | quote }}
+  engine: {{ .engine }}
+  {{- if .cache }}
+  cache:
+    {{- toYaml .cache | nindent 4 }}
+  {{- end }}
+  {{- if .image }}
+  image: {{ .image | quote }}
+  {{- end }}
+  {{- if .args }}
+  args:
+    {{- toYaml .args | nindent 4 }}
+  {{- end }}
+  {{- if .env }}
+  env:
+    {{- toYaml .env | nindent 4 }}
+  {{- end }}
+  {{- if .resources }}
+  resources:
+    {{- toYaml .resources | nindent 4 }}
+  {{- end }}
+{{- end }}

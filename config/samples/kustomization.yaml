@@ -1,5 +1,0 @@
-## Append samples of your project ##
-resources:
-- snipsnap_v1_model.yaml
-- snipsnap_v1_workspace.yaml
-# +kubebuilder:scaffold:manifestskustomizesamples

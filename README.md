@@ -30,24 +30,38 @@ Client (OpenAI SDK)
 - `kubectl` configured
 - Helm 3+
 
-### Install CRDs
-
-```bash
-make install
-```
-
 ### Deploy with Helm
 
+CRDs ship inside the chart at `charts/snipsnap/crds/`, so Helm installs them on the first apply:
+
 ```bash
-helm install snipsnap charts/snipsnap
+helm install snipsnap charts/snipsnap --namespace snipsnap --create-namespace
+```
+
+For a local dev cluster, use the `values-dev.yaml` overrides (always-pull image, metrics on, sample model pre-seeded) via the convenience target:
+
+```bash
+make dev-deploy
 ```
 
 ### Register models
 
-```bash
-kubectl apply -f config/samples/model_ollama_llama3.yaml
-kubectl apply -f config/samples/model_vllm_mistral.yaml
+The chart templates `Model` CRs from the `models:` array in your values file. Add entries inline:
+
+```yaml
+models:
+  - name: llama3
+    url: "ollama://llama3"
+    engine: OLlama
+    cache:
+      enabled: true
+      storageSize: "20Gi"
+    resources:
+      limits:
+        nvidia.com/gpu: "1"
 ```
+
+Then `helm upgrade snipsnap charts/snipsnap -f your-values.yaml` to apply.
 
 ### Use the API
 

@@ -1,5 +1,8 @@
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+REGISTRY ?= ghcr.io/xgeekshq
+IMG_NAME ?= snipsnap
+TAG ?= latest
+IMG ?= $(REGISTRY)/$(IMG_NAME):$(TAG)
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -42,8 +45,8 @@ help: ## Display this help.
 ##@ Development
 
 .PHONY: manifests
-manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	"$(CONTROLLER_GEN)" rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+manifests: controller-gen ## Generate CustomResourceDefinition objects.
+	"$(CONTROLLER_GEN)" crd paths="./..." output:crd:artifacts:config=charts/snipsnap/crds
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -123,6 +126,21 @@ docker-build: ## Build docker image with the manager.
 docker-push: ## Push docker image with the manager.
 	$(CONTAINER_TOOL) push ${IMG}
 
+DEPLOY_NS ?= snipsnap
+
+.PHONY: dev-deploy
+dev-deploy: ## Build, push and deploy to the cluster.
+	$(eval DEV_TAG := $(shell date +%s))
+	$(CONTAINER_TOOL) build -t $(REGISTRY)/$(IMG_NAME):$(DEV_TAG) .
+	$(CONTAINER_TOOL) push $(REGISTRY)/$(IMG_NAME):$(DEV_TAG)
+	helm upgrade -i -n $(DEPLOY_NS) --create-namespace --atomic snipsnap charts/snipsnap/ \
+		-f charts/snipsnap/values-dev.yaml \
+		--set-string image.repository=$(REGISTRY)/$(IMG_NAME) --set-string image.tag=$(DEV_TAG)
+
+.PHONY: helm-uninstall
+helm-uninstall: ## Remove the snipsnap release from the cluster.
+	helm uninstall -n $(DEPLOY_NS) snipsnap
+
 # PLATFORMS defines the target platforms for the manager image be built to provide support to multiple
 # architectures. (i.e. make docker-buildx IMG=myregistry/mypoperator:0.0.1). To use this option you need to:
 # - be able to use docker buildx. More info: https://docs.docker.com/build/buildx/
@@ -140,37 +158,6 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 	- $(CONTAINER_TOOL) buildx rm snipsnap-builder
 	rm Dockerfile.cross
 
-.PHONY: build-installer
-build-installer: manifests generate kustomize ## Generate a consolidated YAML with CRDs and deployment.
-	mkdir -p dist
-	cd config/manager && "$(KUSTOMIZE)" edit set image controller=${IMG}
-	"$(KUSTOMIZE)" build config/default > dist/install.yaml
-
-##@ Deployment
-
-ifndef ignore-not-found
-  ignore-not-found = false
-endif
-
-.PHONY: install
-install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
-	@out="$$( "$(KUSTOMIZE)" build config/crd 2>/dev/null || true )"; \
-	if [ -n "$$out" ]; then echo "$$out" | "$(KUBECTL)" apply -f -; else echo "No CRDs to install; skipping."; fi
-
-.PHONY: uninstall
-uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	@out="$$( "$(KUSTOMIZE)" build config/crd 2>/dev/null || true )"; \
-	if [ -n "$$out" ]; then echo "$$out" | "$(KUBECTL)" delete --ignore-not-found=$(ignore-not-found) -f -; else echo "No CRDs to delete; skipping."; fi
-
-.PHONY: deploy
-deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && "$(KUSTOMIZE)" edit set image controller=${IMG}
-	"$(KUSTOMIZE)" build config/default | "$(KUBECTL)" apply -f -
-
-.PHONY: undeploy
-undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	"$(KUSTOMIZE)" build config/default | "$(KUBECTL)" delete --ignore-not-found=$(ignore-not-found) -f -
-
 ##@ Dependencies
 
 ## Location to install dependencies to
@@ -181,13 +168,11 @@ $(LOCALBIN):
 ## Tool Binaries
 KUBECTL ?= kubectl
 KIND ?= kind
-KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 GOLANGCI_LINT = $(LOCALBIN)/golangci-lint
 
 ## Tool Versions
-KUSTOMIZE_VERSION ?= v5.8.1
 CONTROLLER_TOOLS_VERSION ?= v0.20.1
 
 #ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)
@@ -201,10 +186,6 @@ ENVTEST_K8S_VERSION ?= $(shell v='$(call gomodver,k8s.io/api)'; \
   printf '%s\n' "$$v" | sed -E 's/^v?[0-9]+\.([0-9]+).*/1.\1/')
 
 GOLANGCI_LINT_VERSION ?= v2.8.0
-.PHONY: kustomize
-kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
-$(KUSTOMIZE): $(LOCALBIN)
-	$(call go-install-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v5,$(KUSTOMIZE_VERSION))
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.

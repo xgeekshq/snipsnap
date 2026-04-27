@@ -3,27 +3,45 @@ kind: ClusterRole
 metadata:
   name: snipsnap-manager-role
 rules:
-  - apiGroups: ["snipsnap.xgeeks.com"]
-    resources: ["models"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  - apiGroups: ["snipsnap.xgeeks.com"]
-    resources: ["models/status"]
-    verbs: ["get", "update", "patch"]
-  - apiGroups: ["snipsnap.xgeeks.com"]
-    resources: ["models/finalizers"]
-    verbs: ["update"]
-  - apiGroups: ["snipsnap.xgeeks.com"]
-    resources: ["workspaces"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  - apiGroups: ["snipsnap.xgeeks.com"]
-    resources: ["workspaces/status"]
-    verbs: ["get", "update", "patch"]
-  - apiGroups: ["snipsnap.xgeeks.com"]
-    resources: ["workspaces/finalizers"]
-    verbs: ["update"]
-  - apiGroups: [""]
-    resources: ["pods"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  - apiGroups: [""]
-    resources: ["persistentvolumeclaims"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  - pods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - snipsnap.xgeeks.com
+  resources:
+  - models
+  - workspaces
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - snipsnap.xgeeks.com
+  resources:
+  - models/finalizers
+  - workspaces/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - snipsnap.xgeeks.com
+  resources:
+  - models/status
+  - workspaces/status
+  verbs:
+  - get
+  - patch
+  - update

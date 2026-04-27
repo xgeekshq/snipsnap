@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: snipsnap-controller
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: snipsnap
     app.kubernetes.io/component: controller
@@ -14,20 +14,34 @@ spec:
       app.kubernetes.io/component: controller
   template:
     metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
       labels:
         app.kubernetes.io/name: snipsnap
         app.kubernetes.io/component: controller
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
+      terminationGracePeriodSeconds: 10
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: manager
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
+            - --metrics-bind-address={{ if .Values.metrics.enabled }}{{ .Values.metrics.bindAddress }}{{ else }}0{{ end }}
             - --api-bind-address=:{{ .Values.api.port }}
             - --health-probe-bind-address=:8081
-            - --namespace={{ .Values.namespace }}
+            - --namespace={{ .Release.Namespace }}
             - --workspace-name={{ .Values.workspaceName }}
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
           ports:
             - name: api
               containerPort: {{ .Values.api.port }}
@@ -35,14 +49,23 @@ spec:
             - name: health
               containerPort: 8081
               protocol: TCP
+            {{- if .Values.metrics.enabled }}
+            - name: metrics
+              containerPort: 8443
+              protocol: TCP
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /healthz
               port: health
+            initialDelaySeconds: 15
+            periodSeconds: 20
           readinessProbe:
             httpGet:
               path: /readyz
               port: health
+            initialDelaySeconds: 5
+            periodSeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           env:

@@ -2,6 +2,6 @@ apiVersion: snipsnap.xgeeks.com/v1
 kind: Workspace
 metadata:
   name: {{ .Values.workspaceName }}
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace }}
 spec:
   activeModel: ""

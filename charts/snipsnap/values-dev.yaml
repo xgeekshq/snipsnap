@@ -1,0 +1,24 @@
+image:
+  pullPolicy: Always
+
+metrics:
+  enabled: true
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+models:
+  - name: qwen3-5-2b
+    url: "ollama://qwen3.5:2b"
+    engine: OLlama
+    cache:
+      enabled: true
+      storageSize: "5Gi"
+    resources:
+      limits:
+        nvidia.com/gpu: "1"

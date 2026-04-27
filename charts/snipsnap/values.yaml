@@ -5,12 +5,14 @@ image:
   tag: latest
   pullPolicy: IfNotPresent
 
-namespace: snipsnap
-
 workspaceName: default
 
 api:
   port: 8000
+
+metrics:
+  enabled: false
+  bindAddress: ":8443"
 
 resources:
   limits:
@@ -27,3 +29,15 @@ serviceAccount:
 nodeSelector: {}
 tolerations: []
 affinity: {}
+
+models: []
+
+# - name: qwen3-5-2b
+#   url: "ollama://qwen3.5:2b"
+#   engine: OLlama
+#   cache:
+#     enabled: true
+#     storageSize: "5Gi"
+#   resources:
+#     limits:
+#       nvidia.com/gpu: "1"
