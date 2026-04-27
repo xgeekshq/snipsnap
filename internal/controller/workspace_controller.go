@@ -2,11 +2,8 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"os"
 	"reflect"
-	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -21,15 +18,6 @@ import (
 	snipsnapv1 "github.com/xgeekshq/snipsnap/api/v1"
 	"github.com/xgeekshq/snipsnap/internal/engine"
 )
-
-// #region agent log
-const debugLogPathCtrl = "/home/eugenio/work/snipsnap/snipsnap/.cursor/debug-e00151.log"
-func debugLogController(location, message string, data map[string]interface{}, hypothesisID string) {
-	b, _ := json.Marshal(data)
-	entry := fmt.Sprintf(`{"sessionId":"e00151","location":%q,"message":%q,"data":%s,"hypothesisId":%q,"timestamp":%d}`, location, message, string(b), hypothesisID, time.Now().UnixMilli())
-	if f, err := os.OpenFile(debugLogPathCtrl, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err == nil { f.WriteString(entry + "\n"); f.Close() }
-}
-// #endregion
 
 // WorkspaceReconciler reconciles a Workspace object
 type WorkspaceReconciler struct {
@@ -138,14 +126,8 @@ func (r *WorkspaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// Pod exists -- check its readiness.
-	// #region agent log
-	debugLogController("workspace_controller.go:checkReady", "checking pod readiness", map[string]interface{}{"podName": activePod.Name, "podPhase": string(activePod.Status.Phase), "podIP": activePod.Status.PodIP, "ready": podIsReady(activePod), "conditionCount": len(activePod.Status.Conditions)}, "H1,H2")
-	// #endregion
 	if podIsReady(activePod) {
 		addr := podInferenceAddress(activePod)
-		// #region agent log
-		debugLogController("workspace_controller.go:setReady", "setting workspace ready", map[string]interface{}{"addr": addr, "model": ws.Spec.ActiveModel}, "H2,H4,H5")
-		// #endregion
 		ws.Status.Phase = snipsnapv1.WorkspacePhaseReady
 		ws.Status.LoadedModel = ws.Spec.ActiveModel
 		ws.Status.InferenceAddress = addr

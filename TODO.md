@@ -16,14 +16,18 @@ Known gaps and missing features identified during initial development.
 
 - [ ] **Purge endpoint**: cancel all requests in the queue and remove all model pods
 
+- [ ] **llama.cpp backend**: Add a third inference engine alongside Ollama and vLLM. Needs an `EngineLlamaCpp` constant in `api/v1`, a builder in `internal/engine/` that produces a llama.cpp server pod (image, args, port, readiness probe) from a `Model` CR, and a `url://` scheme + parsing in the engine factory.
+
 ## Medium Priority
 
 - [ ] **In-cluster proxy routing**: The proxy writes raw pod IPs into `Workspace.status.inferenceAddress`, which only works when the operator runs inside the cluster. Running locally via `go run` cannot reach pod IPs. Options: create a Service per inference pod, or add a dev-mode address override flag.
 
 - [ ] **Agent files setup**
 
+- [ ] **Increase proxy test coverage**: `internal/proxy` is at ~22% coverage. Add unit tests for `ensureModel` (cached vs. switch path), `waitForReady` (timeout, polling, ready transition), `proxyRequest` (reverse-proxy wiring, error handler, body replay), and `parseModelFromRequest` edge cases using `httptest` and a fake controller-runtime client.
+
 ## Housekeeping
 
 - [x] **Add bin/ to .gitignore**: The `bin/` directory contains dev tools and envtest binaries (~460MB) that should not be committed.
 
-- [ ] **Remove debug instrumentation**: Debug logging from the pod IP investigation is still present in `internal/proxy/handler.go` and `internal/controller/workspace_controller.go`. Remove before merging.
+- [x] **Remove debug instrumentation**: Debug logging from the pod IP investigation is gone from `internal/proxy/handler.go` and `internal/controller/workspace_controller.go`.

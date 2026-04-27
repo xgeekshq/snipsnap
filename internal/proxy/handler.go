@@ -12,8 +12,6 @@ import (
 	"net/url"
 	"time"
 
-	"os"
-
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -23,17 +21,7 @@ import (
 const (
 	defaultSwitchTimeout = 10 * time.Minute
 	pollInterval         = 500 * time.Millisecond
-	debugLogPath         = "/home/eugenio/work/snipsnap/snipsnap/.cursor/debug-e00151.log"
 )
-
-// #region agent log
-func debugLogProxy(location, message string, data map[string]interface{}, hypothesisID string) {
-	entry := fmt.Sprintf(`{"sessionId":"e00151","location":%q,"message":%q,"data":%s,"hypothesisId":%q,"timestamp":%d}`, location, message, mustJSON(data), hypothesisID, time.Now().UnixMilli())
-	if f, err := os.OpenFile(debugLogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err == nil { f.WriteString(entry + "\n"); f.Close() }
-}
-func mustJSON(v interface{}) string { b, _ := json.Marshal(v); return string(b) }
-
-// #endregion
 
 // Handler is the OpenAI-compatible reverse proxy that triggers model switches.
 type Handler struct {
@@ -74,9 +62,6 @@ func (h *Handler) ensureModel(ctx context.Context, modelName string) (string, er
 	}
 
 	if ws.Status.LoadedModel == modelName && ws.Status.Phase == snipsnapv1.WorkspacePhaseReady {
-		// #region agent log
-		debugLogProxy("handler.go:ensureModel:cached", "model already loaded, returning cached addr", map[string]interface{}{"addr": ws.Status.InferenceAddress, "model": modelName, "phase": string(ws.Status.Phase)}, "H2,H5")
-		// #endregion
 		return ws.Status.InferenceAddress, nil
 	}
 
@@ -109,9 +94,6 @@ func (h *Handler) waitForReady(ctx context.Context, wsKey types.NamespacedName, 
 				log.Printf("proxy: error polling workspace: %v", err)
 				continue
 			}
-			// #region agent log
-			debugLogProxy("handler.go:waitForReady:poll", "polling workspace status", map[string]interface{}{"loadedModel": ws.Status.LoadedModel, "phase": string(ws.Status.Phase), "addr": ws.Status.InferenceAddress, "wantModel": modelName}, "H1,H2,H5")
-			// #endregion
 			if ws.Status.LoadedModel == modelName && ws.Status.Phase == snipsnapv1.WorkspacePhaseReady && ws.Status.InferenceAddress != "" {
 				log.Printf("proxy: model %q ready at %s", modelName, ws.Status.InferenceAddress)
 				return ws.Status.InferenceAddress, nil
@@ -121,9 +103,6 @@ func (h *Handler) waitForReady(ctx context.Context, wsKey types.NamespacedName, 
 }
 
 func (h *Handler) proxyRequest(w http.ResponseWriter, r *http.Request, addr string, body []byte) {
-	// #region agent log
-	debugLogProxy("handler.go:proxyRequest", "proxying to backend", map[string]interface{}{"addr": addr, "path": r.URL.Path, "method": r.Method, "bodyLen": len(body)}, "H3,H4,H5")
-	// #endregion
 	target := &url.URL{
 		Scheme: "http",
 		Host:   addr,
